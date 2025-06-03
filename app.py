@@ -54,7 +54,8 @@ training_columns = get_training_columns()
 st.markdown("""
     <style>
     .stApp {
-        background-image: url("https://images.unsplash.com/photo-1521412644187-c49fa049e84d");
+        background-image: url("https://raw.githubusercontent.com/wacckky/ELECTIVE_FINALS/26ac0f1d8e3a74ed1cab850abda7273503534215/background.jpg
+");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
