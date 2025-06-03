@@ -3,6 +3,22 @@ import pandas as pd
 import numpy as np
 import joblib
 
+st.markdown(
+    """
+    <style>
+    .css-18e3th9 {
+        background-image: url("https://raw.githubusercontent.com/wacckky/ELECTIVE_FINALS/26ac0f1d8e3a74ed1cab850abda7273503534215/background.jpg
+");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
 # === Load the model and scaler ===
 @st.cache_resource
 def load_model_and_scaler():
@@ -51,21 +67,6 @@ def get_training_columns():
     return feature_cols
 
 training_columns = get_training_columns()
-st.markdown(
-    """
-    <style>
-    .css-18e3th9 {
-        background-image: url("https://raw.githubusercontent.com/wacckky/ELECTIVE_FINALS/26ac0f1d8e3a74ed1cab850abda7273503534215/background.jpg
-");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 
 # === UI ===
 st.title("NBA Player Performance Predictor")
