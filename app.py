@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import joblib
 
+# ✅ Inject custom CSS for background, text, input fields, and buttons
 st.markdown(
     """
     <style>
@@ -14,34 +15,45 @@ st.markdown(
         color: white;
     }
 
-    /* Make all general text white */
     .stApp * {
         color: white !important;
     }
 
-    /* Sidebar text white */
     section[data-testid="stSidebar"] * {
         color: white !important;
     }
 
-    /* Make input and slider text black */
     input, select, textarea, .stSlider > div, .stSelectbox div[data-baseweb="select"] * {
         color: black !important;
     }
 
-    /* Fix dropdown menu text color */
     div[data-baseweb="select"] span {
         color: black !important;
     }
 
-    /* Fix disabled slider labels */
     .stSlider label, .stSlider div[data-testid="stTickBar"] span {
         color: black !important;
+    }
+
+    /* Predict Button */
+    div.stButton > button {
+        color: white !important;
+        background-color: #FF4B4B !important;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5em 1em;
+        font-weight: bold;
+    }
+
+    div.stButton > button:hover {
+        background-color: #FF3333 !important;
+        color: white !important;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 
 
