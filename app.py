@@ -12,6 +12,11 @@ st.markdown(
         background-position: center;
         background-repeat: no-repeat;
     }
+   
+     .stApp * {
+        color: white !important;
+    }
+    
     </style>
     """,
     unsafe_allow_html=True
