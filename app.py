@@ -53,7 +53,7 @@ def get_training_columns():
 training_columns = get_training_columns()
 
 # === UI ===
-st.title("🏀 NBA Player Performance Predictor")
+st.title("NBA Player Performance Predictor")
 st.write("Select a team, player, and opponent to predict stats.")
 
 teams = sorted(df['Tm'].unique())
