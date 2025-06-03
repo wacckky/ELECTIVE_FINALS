@@ -1,50 +1,72 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import joblib
 
-# Load model and data
-xgb_model = joblib.load("xgb_model.pkl")
-df = pd.read_csv("MAINDATA.csv", encoding="ISO-8859-1")
+# === Load the model ===
+@st.cache_resource
+def load_model():
+return joblib.load("xgb_model.pkl")
 
-# Clean and preprocess
+model = load_model()
+
+# === Load and process data ===
+@st.cache_data
+def load_data():
+    df = pd.read_csv("MAINDATA (1).csv", encoding="ISO-8859-1")
+    df = pd.read_csv("MAINDATA.csv", encoding="ISO-8859-1")
+df = df.drop_duplicates()
 df['Player'] = df['Player'].str.strip().str.title()
 df['Tm'] = df['Tm'].str.strip().str.upper()
 df['Opp'] = df['Opp'].str.strip().str.upper()
-df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-df = df.dropna(subset=['Date'])
 
-# Sidebar selections
-teams = sorted(df['Tm'].unique())
-selected_team = st.sidebar.selectbox("Select Team", teams)
+cols_to_numeric = ['MP', 'PTS', 'TRB', 'AST', 'TOV']
+for col in cols_to_numeric:
+df[col] = pd.to_numeric(df[col], errors='coerce')
 
-players = sorted(df[df['Tm'] == selected_team]['Player'].unique())
-selected_player = st.sidebar.selectbox("Select Player", players)
+df.fillna(df.mean(numeric_only=True), inplace=True)
 
-opponent_teams = sorted(df['Opp'].unique())
-selected_opponent = st.sidebar.selectbox("Select Opponent Team", opponent_teams)
+if {'PTS', 'TRB', 'AST', 'TOV'}.issubset(df.columns):
+df['EFFICIENCY'] = df['PTS'] + df['TRB'] + df['AST'] - df['TOV']
 
+return df
+
+df = load_data()
+
+# === UI Layout ===
 st.title("🏀 NBA Player Performance Predictor")
+st.write("Use the dropdowns below to select a **team**, a **player**, and an **opponent team** to predict performance.")
 
-if st.button("Predict Stats"):
-    player_data = df[(df['Player'] == selected_player) & (df['Opp'] == selected_opponent)]
+# Dropdown: Select Team
+teams = sorted(df['Tm'].unique())
+selected_team = st.selectbox("Select Player's Team:", teams)
 
-    if player_data.empty:
-        recent_games = df[df['Player'] == selected_player].sort_values(by='Date', ascending=False).head(5)
-        if recent_games.empty:
-            st.error(f"❌ No data found for player: {selected_player}")
-        else:
-            st.warning(f"⚠️ No games found for {selected_player} vs {selected_opponent}. Using last 5 games instead.")
-            avg_input = recent_games.drop(columns=['PTS', 'TRB', 'AST']).mean().to_frame().T
-            prediction = xgb_model.predict(avg_input)
-    else:
-        avg_input = player_data.drop(columns=['PTS', 'TRB', 'AST']).mean().to_frame().T
-        prediction = xgb_model.predict(avg_input)
+# Dropdown: Select Player from Team
+players_from_team = sorted(df[df['Tm'] == selected_team]['Player'].unique())
+selected_player = st.selectbox("Select Player:", players_from_team)
 
-    predicted_pts = round(prediction[0][0])
-    predicted_trb = round(prediction[0][1])
-    predicted_ast = round(prediction[0][2])
+# Dropdown: Select Opponent
+opponents = sorted(df['Opp'].unique())
+selected_opponent = st.selectbox("Select Opponent Team:", opponents)
 
-    st.subheader(f"📊 Predicted Stats for {selected_player}")
-    st.write(f"- Points: {predicted_pts}")
-    st.write(f"- Rebounds: {predicted_trb}")
-    st.write(f"- Assists: {predicted_ast}")
+# Prediction Trigger
+if st.button("Predict Performance"):
+player_data = df[(df['Player'] == selected_player) & (df['Opp'] == selected_opponent)]
+
+if player_data.empty:
+st.warning(f"No game data for {selected_player} vs {selected_opponent}")
+player_only = df[df['Player'] == selected_player]
+if not player_only.empty:
+st.info(f"This player has played vs: {', '.join(player_only['Opp'].unique())}")
+else:
+numeric_df = df.select_dtypes(include=[np.number])
+X_columns = numeric_df.drop(columns=['PTS', 'TRB', 'AST']).columns
+avg_features = player_data[X_columns].mean().to_frame().T
+
+prediction = model.predict(avg_features)
+predicted_pts, predicted_trb, predicted_ast = prediction[0]
+
+st.subheader(f"📊 Prediction for {selected_player} vs {selected_opponent}")
+st.write(f"**Points**: {predicted_pts:.2f}")
+st.write(f"**Rebounds**: {predicted_trb:.2f}")
+st.write(f"**Assists**: {predicted_ast:.2f}")
