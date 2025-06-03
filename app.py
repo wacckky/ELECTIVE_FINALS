@@ -11,16 +11,38 @@ st.markdown(
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
+        color: white;
     }
-   
-     .stApp * {
+
+    /* Make all general text white */
+    .stApp * {
         color: white !important;
     }
-    
+
+    /* Sidebar text white */
+    section[data-testid="stSidebar"] * {
+        color: white !important;
+    }
+
+    /* Make input and slider text black */
+    input, select, textarea, .stSlider > div, .stSelectbox div[data-baseweb="select"] * {
+        color: black !important;
+    }
+
+    /* Fix dropdown menu text color */
+    div[data-baseweb="select"] span {
+        color: black !important;
+    }
+
+    /* Fix disabled slider labels */
+    .stSlider label, .stSlider div[data-testid="stTickBar"] span {
+        color: black !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 
 
