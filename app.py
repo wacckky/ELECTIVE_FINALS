@@ -51,6 +51,16 @@ def get_training_columns():
     return feature_cols
 
 training_columns = get_training_columns()
+st.markdown("""
+    <style>
+    .stApp {
+        background-image: url("https://images.unsplash.com/photo-1521412644187-c49fa049e84d");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # === UI ===
 st.title("NBA Player Performance Predictor")
