@@ -1,13 +1,16 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from xgboost import XGBRegressor
-from sklearn.multioutput import MultiOutputRegressor
-from sklearn.model_selection import train_test_split
+import joblib
 
-st.title("🏀 NBA Player Performance Predictor")
+# === Load the model (cached) ===
+@st.cache_resource
+def load_model():
+    return joblib.load("xgb_model.pkl")
 
-# Load the dataset
+model = load_model()
+
+# === Load data ===
 @st.cache_data
 def load_data():
     df = pd.read_csv("MAINDATA.csv", encoding="ISO-8859-1")
@@ -18,55 +21,43 @@ def load_data():
     cols_to_numeric = ['MP', 'PTS', 'TRB', 'AST', 'TOV']
     for col in cols_to_numeric:
         df[col] = pd.to_numeric(df[col], errors='coerce')
+
     df.fillna(df.mean(numeric_only=True), inplace=True)
 
     if {'PTS', 'TRB', 'AST', 'TOV'}.issubset(df.columns):
         df['EFFICIENCY'] = df['PTS'] + df['TRB'] + df['AST'] - df['TOV']
 
-    numeric_df = df.apply(pd.to_numeric, errors='coerce')
-    numeric_df = numeric_df.dropna(axis=1, how='all')
+    return df
 
-    return df, numeric_df
+df = load_data()
 
-df, numeric_df = load_data()
+# === UI ===
+st.title("🏀 NBA Player Performance Predictor")
+st.write("Predict a player's average **points**, **rebounds**, and **assists** vs a specific opponent.")
 
-# Prepare features and target
-y = numeric_df[['PTS', 'TRB', 'AST']]
-X = numeric_df.drop(['PTS', 'TRB', 'AST'], axis=1)
+player_name = st.text_input("Enter Player Name:")
+opponent_team = st.text_input("Enter Opponent Team (3-letter code, e.g. LAL, BOS):")
 
-# Train the XGBoost model
-@st.cache_resource
-def train_model(X, y):
-    X_train, _, y_train, _ = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = MultiOutputRegressor(XGBRegressor(random_state=42, n_estimators=100))
-    model.fit(X_train, y_train)
-    return model
-
-model = train_model(X, y)
-
-# UI Inputs
-player_name = st.text_input("Enter player name:")
-opponent_team = st.text_input("Enter opponent team:")
-
-if st.button("Predict Performance"):
-    player_name = player_name.strip().title()
-    opponent_team = opponent_team.strip().upper()
-    player_data = df[(df['Player'] == player_name) & (df['Opp'] == opponent_team)]
+if st.button("Predict"):
+    player = player_name.strip().title()
+    opp = opponent_team.strip().upper()
+    
+    player_data = df[(df['Player'] == player) & (df['Opp'] == opp)]
 
     if player_data.empty:
-        player_only = df[df['Player'] == player_name]
-        if player_only.empty:
-            st.error(f"❌ Player '{player_name}' not found.")
-        else:
-            st.warning(f"⚠️ No games found for '{player_name}' against '{opponent_team}'.")
-            st.write("Teams this player has played against:")
-            st.write(player_only['Opp'].unique())
+        st.warning(f"No data found for {player} vs {opp}")
+        player_only = df[df['Player'] == player]
+        if not player_only.empty:
+            st.info(f"But this player has played vs: {', '.join(player_only['Opp'].unique())}")
     else:
-        avg_features = player_data[X.columns].mean().to_frame().T
-        prediction = model.predict(avg_features)[0]
-        pts, trb, ast = prediction
+        numeric_df = df.select_dtypes(include=[np.number])
+        X_columns = numeric_df.drop(columns=['PTS', 'TRB', 'AST']).columns
+        avg_features = player_data[X_columns].mean().to_frame().T
 
-        st.subheader(f"📊 Predicted Averages vs {opponent_team}")
-        st.write(f"- Points: `{pts:.2f}`")
-        st.write(f"- Rebounds: `{trb:.2f}`")
-        st.write(f"- Assists: `{ast:.2f}`")
+        prediction = model.predict(avg_features)
+        predicted_pts, predicted_trb, predicted_ast = prediction[0]
+
+        st.subheader(f"📊 Prediction for {player} vs {opp}")
+        st.write(f"**Points**: {predicted_pts:.2f}")
+        st.write(f"**Rebounds**: {predicted_trb:.2f}")
+        st.write(f"**Assists**: {predicted_ast:.2f}")
