@@ -96,7 +96,12 @@ if st.button("Predict Performance"):
         prediction = model.predict(X_scaled)
         pts, trb, ast = prediction[0]
 
+        # Round results to whole numbers
+        pts = round(pts)
+        trb = round(trb)
+        ast = round(ast)
+
         st.subheader(f"📊 Prediction for {selected_player} vs {selected_opponent}")
-        st.write(f"**Points:** {pts:.2f}")
-        st.write(f"**Rebounds:** {trb:.2f}")
-        st.write(f"**Assists:** {ast:.2f}")
+        st.write(f"**Points:** {pts}")
+        st.write(f"**Rebounds:** {trb}")
+        st.write(f"**Assists:** {ast}")
