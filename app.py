@@ -102,6 +102,7 @@ if st.button("Predict Performance"):
         ast = round(ast)
 
         st.subheader(f"📊 Prediction for {selected_player} vs {selected_opponent}")
-        st.write(f"**Points:** {pts}")
-        st.write(f"**Rebounds:** {trb}")
-        st.write(f"**Assists:** {ast}")
+        st.slider("Predicted Points", min_value=0, max_value=60, value=int(pts), disabled=True)
+        st.slider("Predicted Rebounds", min_value=0, max_value=30, value=int(trb), disabled=True)
+        st.slider("Predicted Assists", min_value=0, max_value=30, value=int(ast), disabled=True)
+
