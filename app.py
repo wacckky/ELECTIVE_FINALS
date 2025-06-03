@@ -100,9 +100,18 @@ if st.button("Predict Performance"):
         pts = round(pts)
         trb = round(trb)
         ast = round(ast)
+        import streamlit.components.v1 as components
 
         st.subheader(f"📊 Prediction for {selected_player} vs {selected_opponent}")
-        st.slider("Predicted Points", min_value=0, max_value=60, value=int(pts), disabled=True)
-        st.slider("Predicted Rebounds", min_value=0, max_value=30, value=int(trb), disabled=True)
-        st.slider("Predicted Assists", min_value=0, max_value=30, value=int(ast), disabled=True)
+
+        # Styled labels and disabled sliders
+        st.markdown("### 🔴 **Points**")
+        st.slider("Predicted Points", min_value=0, max_value=60, value=int(pts), disabled=True, key="points_slider")
+
+        st.markdown("### 🔵 **Rebounds**")
+        st.slider("Predicted Rebounds", min_value=0, max_value=30, value=int(trb), disabled=True, key="rebounds_slider")
+
+        st.markdown("### 🟢 **Assists**")
+        st.slider("Predicted Assists", min_value=0, max_value=30, value=int(ast), disabled=True, key="assists_slider")
+
 
