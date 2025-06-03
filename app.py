@@ -13,7 +13,7 @@ model = load_model()
 # === Load and process data ===
 @st.cache_data
 def load_data():
-    df = pd.read_csv("MAINDATA (1).csv", encoding="ISO-8859-1")
+    df = pd.read_csv("MAINDATA.csv", encoding="ISO-8859-1")
     df = df.drop_duplicates()
     df['Player'] = df['Player'].str.strip().str.title()
     df['Tm'] = df['Tm'].str.strip().str.upper()
