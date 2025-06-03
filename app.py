@@ -6,9 +6,8 @@ import joblib
 st.markdown(
     """
     <style>
-    .css-18e3th9 {
-        background-image: url("https://raw.githubusercontent.com/wacckky/ELECTIVE_FINALS/26ac0f1d8e3a74ed1cab850abda7273503534215/background.jpg
-");
+    .stApp {
+        background-image: url("https://raw.githubusercontent.com/wacckky/ELECTIVE_FINALS/26ac0f1d8e3a74ed1cab850abda7273503534215/background.jpg");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -17,6 +16,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 # === Load the model and scaler ===
