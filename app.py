@@ -6,8 +6,8 @@ import joblib
 # === Load the model and scaler ===
 @st.cache_resource
 def load_model_and_scaler():
-    model = joblib.load("xgb_model.pkl")
-    scaler = joblib.load("xgb_scaler.pkl")
+    model = joblib.load("xgb_model2.pkl")
+    scaler = joblib.load("xgb_scaler2.pkl")
     return model, scaler
 
 model, scaler = load_model_and_scaler()
