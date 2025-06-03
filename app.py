@@ -3,14 +3,16 @@ import pandas as pd
 import numpy as np
 import joblib
 
-# === Load the model ===
+# === Load the model and scaler ===
 @st.cache_resource
-def load_model():
-    return joblib.load("xgb_model.pkl")
+def load_model_and_scaler():
+    model = joblib.load("xgb_model.pkl")
+    scaler = joblib.load("xgb_scaler.pkl")
+    return model, scaler
 
-model = load_model()
+model, scaler = load_model_and_scaler()
 
-# === Load and process data ===
+# === Load data ===
 @st.cache_data
 def load_data():
     df = pd.read_csv("MAINDATA.csv", encoding="ISO-8859-1")
@@ -18,11 +20,15 @@ def load_data():
     df['Player'] = df['Player'].str.strip().str.title()
     df['Tm'] = df['Tm'].str.strip().str.upper()
     df['Opp'] = df['Opp'].str.strip().str.upper()
-
-    cols_to_numeric = ['MP', 'PTS', 'TRB', 'AST', 'TOV']
-    for col in cols_to_numeric:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-
+    df['Res'] = df['Res'].map({'W': 1, 'L': 0})
+    
+    # Convert numeric columns
+    numeric_cols = ['MP', 'PTS', 'TRB', 'AST', 'TOV', 'FG', 'FGA', '3P', '3PA', 'FT', 'FTA',
+                    'ORB', 'DRB', 'PF']
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    
     df.fillna(df.mean(numeric_only=True), inplace=True)
 
     if {'PTS', 'TRB', 'AST', 'TOV'}.issubset(df.columns):
@@ -32,24 +38,36 @@ def load_data():
 
 df = load_data()
 
-# === UI Layout ===
-st.title("🏀 NBA Player Performance Predictor")
-st.write("Use the dropdowns below to select a **team**, a **player**, and an **opponent team** to predict performance.")
+# Prepare columns used for training
+categorical_cols = ['Player', 'Tm', 'Opp']
+numeric_cols = ['MP', 'FG', 'FGA', '3P', '3PA', 'FT', 'FTA',
+                'ORB', 'DRB', 'TOV', 'PF', 'EFFICIENCY', 'Res']
 
-# Dropdown: Select Team
+# Get training feature columns to align inputs later
+@st.cache_data
+def get_training_columns():
+    df_encoded = pd.get_dummies(df[categorical_cols], drop_first=True)
+    feature_cols = list(df_encoded.columns) + numeric_cols
+    return feature_cols
+
+training_columns = get_training_columns()
+
+# === UI ===
+st.title("🏀 NBA Player Performance Predictor")
+st.write("Select a team, player, and opponent to predict stats.")
+
 teams = sorted(df['Tm'].unique())
 selected_team = st.selectbox("Select Player's Team:", teams)
 
-# Dropdown: Select Player from Team
 players_from_team = sorted(df[df['Tm'] == selected_team]['Player'].unique())
 selected_player = st.selectbox("Select Player:", players_from_team)
 
-# Dropdown: Select Opponent
 opponents = sorted(df['Opp'].unique())
 selected_opponent = st.selectbox("Select Opponent Team:", opponents)
 
-# Prediction Trigger
 if st.button("Predict Performance"):
+
+    # Filter data for the player/opponent combo
     player_data = df[(df['Player'] == selected_player) & (df['Opp'] == selected_opponent)]
 
     if player_data.empty:
@@ -58,14 +76,27 @@ if st.button("Predict Performance"):
         if not player_only.empty:
             st.info(f"This player has played vs: {', '.join(player_only['Opp'].unique())}")
     else:
-        numeric_df = df.select_dtypes(include=[np.number])
-        X_columns = numeric_df.drop(columns=['PTS', 'TRB', 'AST']).columns
-        avg_features = player_data[X_columns].mean().to_frame().T
+        # Get average stats for numeric and categorical features for that combo
+        avg_numeric = player_data[numeric_cols].mean().to_frame().T
+        avg_cat = player_data[categorical_cols].iloc[0:1]  # Just one row for categorical
 
-        prediction = model.predict(avg_features)
-        predicted_pts, predicted_trb, predicted_ast = prediction[0]
+        # One-hot encode the categorical features
+        cat_encoded = pd.get_dummies(avg_cat, drop_first=True)
+
+        # Combine numeric and encoded categorical features
+        X_input = pd.concat([cat_encoded.reset_index(drop=True), avg_numeric.reset_index(drop=True)], axis=1)
+
+        # Align columns with training data - add missing columns with 0
+        X_input = X_input.reindex(columns=training_columns, fill_value=0)
+
+        # Scale input
+        X_scaled = scaler.transform(X_input)
+
+        # Predict
+        prediction = model.predict(X_scaled)
+        pts, trb, ast = prediction[0]
 
         st.subheader(f"📊 Prediction for {selected_player} vs {selected_opponent}")
-        st.write(f"**Points**: {predicted_pts:.2f}")
-        st.write(f"**Rebounds**: {predicted_trb:.2f}")
-        st.write(f"**Assists**: {predicted_ast:.2f}")
+        st.write(f"**Points:** {pts:.2f}")
+        st.write(f"**Rebounds:** {trb:.2f}")
+        st.write(f"**Assists:** {ast:.2f}")
